@@ -5,7 +5,15 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return render_template("login.html")
+    return render_template("index.html", 
+                           profile={"name": "Guest"}, 
+                           analytics={"readiness_score": 0}, 
+                           gaps=[], 
+                           recommendations=[], 
+                           batch_analytics={"avg_readiness": 0, "demand_trends": []},
+                           students=[],
+                           jobs=[],
+                           path=[])
 
 @app.route("/dashboard.html")
 def dashboard_legacy():
@@ -30,13 +38,29 @@ def dashboard():
         {"name": "Rahul Verma", "course": "B.Tech ECE", "readiness_score": 45, "status": "danger", "suggestion": "Complete Python basics"}
     ]
 
-    return render_template("dashboard.html", 
+    # Mock data for jobs and path
+    jobs = [
+        {"title": "Backend Engineer", "company": "Freshworks · Chennai", "match": 82, "bg": "#E6F1FB", "color": "#185FA5", "initials": "FW"},
+        {"title": "ML Engineer Intern", "company": "Zoho Corp · Remote", "match": 74, "bg": "#E1F5EE", "color": "#0F6E56", "initials": "ZO"},
+        {"title": "Software Developer", "company": "TCS Digital · Chennai", "match": 71, "bg": "#EEEDFE", "color": "#534AB7", "initials": "TC"}
+    ]
+    
+    path = [
+        {"label": "DSA Mastery", "detail": "Completed — LeetCode 150+", "state": "done", "icon": "✓"},
+        {"label": "System Design Basics", "detail": "In progress — 60% complete", "state": "active", "icon": "→"},
+        {"label": "ML Fundamentals (Coursera)", "detail": "Recommended next", "state": "todo", "icon": "○"},
+        {"label": "Build 2 API projects", "detail": "REST + Flask practice", "state": "todo", "icon": "○"}
+    ]
+
+    return render_template("index.html", 
                            profile=profile_data.get("data", profile_data) if isinstance(profile_data, dict) else profile_data, 
                            analytics=analysis_data.get("data", analysis_data) if isinstance(analysis_data, dict) else analysis_data, 
                            gaps=gaps_data.get("data", gaps_data) if isinstance(gaps_data, dict) else gaps_data, 
                            recommendations=recommendations_data.get("data", recommendations_data) if isinstance(recommendations_data, dict) else recommendations_data,
                            batch_analytics=batch_analytics,
-                           students=students)
+                           students=students,
+                           jobs=jobs,
+                           path=path)
 
 @app.route("/api/login", methods=["POST"])
 def login():

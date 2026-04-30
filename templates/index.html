@@ -259,7 +259,7 @@
     alert("✅ SUCCESS: Your AI Assistant has already fully generated the Flask + Supabase backend and AI engine for PlaceIQ! \n\nCheck the 'backend' folder in your project directory. You can start the server by running 'python app.py'!");
   }
 
-  const skills = [
+  const skills = {{ gaps | tojson | safe }} || [
     { name: 'Python', pct: 88, gap: false },
     { name: 'Machine Learning', pct: 52, gap: true },
     { name: 'System Design', pct: 41, gap: true },
@@ -267,21 +267,28 @@
     { name: 'REST APIs', pct: 65, gap: true },
     { name: 'DSA / Algorithms', pct: 83, gap: false },
   ];
+  
+  // Transform gaps to skill format if needed
+  const formattedSkills = skills.map(s => ({
+    name: s.skill_name || s.name,
+    pct: s.match_percent || s.pct,
+    gap: s.match_percent < 50 || s.gap
+  }));
 
-  const jobs = [
+  const jobs = {{ jobs | tojson | safe }} || [
     { title: 'Backend Engineer', company: 'Freshworks · Chennai', match: 82, bg: '#E6F1FB', color: '#185FA5', initials: 'FW' },
     { title: 'ML Engineer Intern', company: 'Zoho Corp · Remote', match: 74, bg: '#E1F5EE', color: '#0F6E56', initials: 'ZO' },
     { title: 'Software Developer', company: 'TCS Digital · Chennai', match: 71, bg: '#EEEDFE', color: '#534AB7', initials: 'TC' },
   ];
 
-  const path = [
+  const path = {{ path | tojson | safe }} || [
     { label: 'DSA Mastery', detail: 'Completed — LeetCode 150+', state: 'done', icon: '✓' },
     { label: 'System Design Basics', detail: 'In progress — 60% complete', state: 'active', icon: '→' },
     { label: 'ML Fundamentals (Coursera)', detail: 'Recommended next', state: 'todo', icon: '○' },
     { label: 'Build 2 API projects', detail: 'REST + Flask practice', state: 'todo', icon: '○' },
   ];
 
-  const demand = [
+  const demand = {{ batch_analytics.demand_trends | tojson | safe }} || [
     { name: 'LLM / GenAI', pct: 94, color: '#378ADD' },
     { name: 'Cloud (AWS/GCP)', pct: 88, color: '#1D9E75' },
     { name: 'System Design', pct: 81, color: '#534AB7' },
@@ -297,7 +304,7 @@
 
   function renderSkills() {
     const cont = document.getElementById('skillRows');
-    cont.innerHTML = skills.map(s => `
+    cont.innerHTML = formattedSkills.map(s => `
       <div class="skill-row">
         <span class="skill-name">${s.name}</span>
         <div class="skill-bar-bg"><div class="skill-bar-fill" data-pct="${s.pct}" style="width:0%;background:${s.gap ? '#EF9F27' : '#378ADD'};"></div></div>
@@ -381,21 +388,27 @@
     const pass = document.getElementById('loginPassword').value;
     
     if (email && pass) {
-      document.getElementById('loginView').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      // Initialize visuals only when dashboard is shown
-      renderSkills();
-      renderJobs();
-      renderPath();
-      renderDemand();
-      renderAlerts();
-      setTimeout(() => animateScore(73), 300);
+      // Redirect to dashboard to fetch real data
+      window.location.href = "/dashboard?user_id=123";
     } else {
       alert("Please enter valid credentials.");
     }
   }
 
-  // Visuals will be rendered on login instead of immediately
+  // Initialize view based on backend data
+  window.onload = () => {
+    const userName = "{{ profile.name }}";
+    if (userName !== "Guest") {
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      renderSkills();
+      renderJobs();
+      renderPath();
+      renderDemand();
+      renderAlerts();
+      setTimeout(() => animateScore({{ analytics.readiness_score }}), 300);
+    }
+  };
   </script>
 </body>
 </html>
