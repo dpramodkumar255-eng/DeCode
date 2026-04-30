@@ -252,6 +252,11 @@
     </div>
   </div>
 
+  <script id="data-gaps" type="application/json">{{ gaps | tojson | safe }}</script>
+  <script id="data-jobs" type="application/json">{{ jobs | tojson | safe }}</script>
+  <script id="data-path" type="application/json">{{ path | tojson | safe }}</script>
+  <script id="data-demand" type="application/json">{{ batch_analytics.demand_trends | tojson | safe }}</script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script>
   // Function attached to CTA buttons
@@ -259,7 +264,13 @@
     alert("✅ SUCCESS: Your AI Assistant has already fully generated the Flask + Supabase backend and AI engine for PlaceIQ! \n\nCheck the 'backend' folder in your project directory. You can start the server by running 'python app.py'!");
   }
 
-  const skills = {{ gaps | tojson | safe }} || [
+  // Parse injected data
+  const rawGaps = JSON.parse(document.getElementById('data-gaps').textContent);
+  const rawJobs = JSON.parse(document.getElementById('data-jobs').textContent);
+  const rawPath = JSON.parse(document.getElementById('data-path').textContent);
+  const rawDemand = JSON.parse(document.getElementById('data-demand').textContent);
+
+  const skills = (rawGaps && rawGaps.length > 0) ? rawGaps : [
     { name: 'Python', pct: 88, gap: false },
     { name: 'Machine Learning', pct: 52, gap: true },
     { name: 'System Design', pct: 41, gap: true },
@@ -275,20 +286,20 @@
     gap: s.match_percent < 50 || s.gap
   }));
 
-  const jobs = {{ jobs | tojson | safe }} || [
+  const jobs = (rawJobs && rawJobs.length > 0) ? rawJobs : [
     { title: 'Backend Engineer', company: 'Freshworks · Chennai', match: 82, bg: '#E6F1FB', color: '#185FA5', initials: 'FW' },
     { title: 'ML Engineer Intern', company: 'Zoho Corp · Remote', match: 74, bg: '#E1F5EE', color: '#0F6E56', initials: 'ZO' },
     { title: 'Software Developer', company: 'TCS Digital · Chennai', match: 71, bg: '#EEEDFE', color: '#534AB7', initials: 'TC' },
   ];
 
-  const path = {{ path | tojson | safe }} || [
+  const path = (rawPath && rawPath.length > 0) ? rawPath : [
     { label: 'DSA Mastery', detail: 'Completed — LeetCode 150+', state: 'done', icon: '✓' },
     { label: 'System Design Basics', detail: 'In progress — 60% complete', state: 'active', icon: '→' },
     { label: 'ML Fundamentals (Coursera)', detail: 'Recommended next', state: 'todo', icon: '○' },
     { label: 'Build 2 API projects', detail: 'REST + Flask practice', state: 'todo', icon: '○' },
   ];
 
-  const demand = {{ batch_analytics.demand_trends | tojson | safe }} || [
+  const demand = (rawDemand && rawDemand.length > 0) ? rawDemand : [
     { name: 'LLM / GenAI', pct: 94, color: '#378ADD' },
     { name: 'Cloud (AWS/GCP)', pct: 88, color: '#1D9E75' },
     { name: 'System Design', pct: 81, color: '#534AB7' },
@@ -395,9 +406,13 @@
     }
   }
 
+  <script id="data-score" type="application/json">{{ analytics.readiness_score | tojson | safe }}</script>
+  <script>
   // Initialize view based on backend data
   window.onload = () => {
     const userName = "{{ profile.name }}";
+    const readinessScore = JSON.parse(document.getElementById('data-score').textContent) || 0;
+    
     if (userName !== "Guest") {
       document.getElementById('loginView').style.display = 'none';
       document.getElementById('mainApp').style.display = 'block';
@@ -406,7 +421,7 @@
       renderPath();
       renderDemand();
       renderAlerts();
-      setTimeout(() => animateScore({{ analytics.readiness_score }}), 300);
+      setTimeout(() => animateScore(readinessScore), 300);
     }
   };
   </script>
