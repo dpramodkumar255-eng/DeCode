@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("login.html")
 
 @app.route("/dashboard.html")
 def dashboard_legacy():
@@ -17,18 +17,26 @@ def dashboard():
     user_id = request.args.get("user_id", "guest")
     
     # Fetch real-time AI analytics from Supabase
-    profile = get_user_profile(user_id)
-    analysis = get_readiness_analysis(user_id)
-    gaps = get_skill_gaps(user_id)
-    recommendations = get_recommendations(user_id)
+    profile_data = get_user_profile(user_id)
+    analysis_data = get_readiness_analysis(user_id)
+    gaps_data = get_skill_gaps(user_id)
+    recommendations_data = get_recommendations(user_id)
     batch_analytics = get_institutional_analytics()
 
+    # Mock student list for the leaderboard if not in DB
+    students = [
+        {"name": "Arjun Ramesh", "course": "B.Tech CSE", "readiness_score": 84, "status": "success", "suggestion": "Apply to Tier-1 companies"},
+        {"name": "Priya Das", "course": "B.Tech IT", "readiness_score": 72, "status": "warning", "suggestion": "Practice System Design"},
+        {"name": "Rahul Verma", "course": "B.Tech ECE", "readiness_score": 45, "status": "danger", "suggestion": "Complete Python basics"}
+    ]
+
     return render_template("dashboard.html", 
-                           profile=profile, 
-                           analysis=analysis, 
-                           gaps=gaps, 
-                           recommendations=recommendations,
-                           batch_analytics=batch_analytics)
+                           profile=profile_data.get("data", profile_data) if isinstance(profile_data, dict) else profile_data, 
+                           analytics=analysis_data.get("data", analysis_data) if isinstance(analysis_data, dict) else analysis_data, 
+                           gaps=gaps_data.get("data", gaps_data) if isinstance(gaps_data, dict) else gaps_data, 
+                           recommendations=recommendations_data.get("data", recommendations_data) if isinstance(recommendations_data, dict) else recommendations_data,
+                           batch_analytics=batch_analytics,
+                           students=students)
 
 @app.route("/api/login", methods=["POST"])
 def login():
