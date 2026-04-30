@@ -15,16 +15,25 @@ def skill_gap(user_skills, job_skills):
     missing = [j for j in job_skills if j.lower() not in user_skills_lower]
     return missing
 
-def predict_job_fit(skill_score, projects, cgpa):
+def calculate_market_fit(readiness_score, market_demand=85):
     """
-    Calculates weighted score based on GradFit methodology:
-    - Skill Match: 45%
-    - Experience (Projects): 35%
-    - Education (CGPA): 20%
+    Categorizes the student's alignment with current market trends.
+    Inspired by GradFit's 'Market Fit Analysis' method.
     """
-    # Normalize inputs
-    experience_score = min((projects / 5.0) * 100, 100) # Assuming 5 projects is full experience
-    education_score = min((cgpa / 10.0) * 100, 100)    # Assuming 10.0 CGPA is full education
-    
-    fit = (skill_score * 0.45) + (experience_score * 0.35) + (education_score * 0.20)
+    if readiness_score >= 85 and market_demand >= 80:
+        return "Exceptional Market Fit (High Demand)"
+    elif readiness_score >= 70:
+        return "Strong Market Fit"
+    elif readiness_score >= 50:
+        return "Developing Alignment"
+    else:
+        return "Skill Gap / Pivoting Required"
+
+def predict_job_fit(score, cgpa):
+    """
+    Calculates weighted score using:
+    job_fit = (score * 0.7) + (cgpa * 3)
+    """
+    fit = (score * 0.7) + (cgpa * 3.0)
+    # Ensure it maxes out gracefully at 100
     return min(round(fit, 2), 100.0)

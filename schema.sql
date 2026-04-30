@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     cgpa NUMERIC(3,2) CHECK (cgpa >= 0 AND cgpa <= 10),
+    is_mentor_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS public.analysis_results (
     readiness_score NUMERIC(5,2),
     skill_match NUMERIC(5,2),
     job_fit NUMERIC(5,2),
+    market_fit TEXT,
     analyzed_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 

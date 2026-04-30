@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return render_template("login.html")
+    return render_template("index.html")
 
 @app.route("/dashboard.html")
 def dashboard_legacy():
@@ -61,8 +61,7 @@ def analyze_profile():
     academic_score = min(gpa / 10.0 * 100, 100)      # Assume 10.0 GPA is max
     market_demand = 85                               # Static mock for high demand stack
     
-    # Readiness Score Formula (GradFit Methodology): (45% Skills) + (35% Projects) + (20% Academic)
-    readiness_score = (0.45 * skill_match_percent) + (0.35 * project_score) + (0.20 * academic_score)
+    readiness_score = (0.40 * skill_match_percent) + (0.30 * project_score) + (0.10 * academic_score) + (0.20 * market_demand)
     
     # Job Match Prediction
     if skill_match_percent >= 70:
