@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Readiness Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            align-items: flex-start;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        .dashboard-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            animation: fadeUp 0.8s forwards;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #10b981, #34d399);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+
+        .stat-card h3 { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem; }
+        .stat-card p { font-size: 2rem; font-weight: 700; color: var(--text-main); }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-container {
+            background: rgba(15, 23, 42, 0.4);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table-container {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th { color: var(--text-muted); font-weight: 500; }
+        
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-danger { background-color: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); }
+        .badge-warning { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.5); }
+        .badge-success { background-color: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); }
+
+        .logout-btn {
+            background-color: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-main);
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div>
+                <h1>Readiness Analytics</h1>
+                <p style="color: var(--text-muted);">Overview of student performance & placements</p>
+            </div>
+            <button class="logout-btn" onclick="window.location.href='/'">Log Out</button>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="stat-card">
+                <h3>Placement Rate</h3>
+                <p>{{ analytics.placement_rate }}%</p>
+            </div>
+            <div class="stat-card">
+                <h3>Avg Readiness Score</h3>
+                <p>{{ analytics.avg_readiness }}/100</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Students</h3>
+                <p>{{ students|length }}</p>
+            </div>
+        </div>
+
+        <div class="analyzer-container" style="background: rgba(15, 23, 42, 0.4); border-radius: 16px; padding: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 3rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-muted);">AI Profile & Career Analyzer</h3>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <input type="text" id="ai-skills" placeholder="Skills (e.g. Python, React, SQL)" style="flex: 1; padding: 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; min-width: 200px;">
+                <input type="number" id="ai-gpa" placeholder="GPA (out of 10)" step="0.1" max="10" style="width: 150px; padding: 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                <input type="number" id="ai-projects" placeholder="Projects Count" style="width: 150px; padding: 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                <button onclick="analyzeProfile()" style="padding: 0.75rem 1.5rem; background: linear-gradient(to right, #6366f1, #8b5cf6); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Analyze Profile ✨</button>
+            </div>
+            
+            <div id="ai-results" style="display: none; margin-top: 1.5rem; padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Predicted Job Match</p>
+                        <h4 id="res-job" style="font-size: 1.25rem; font-weight: 600; color: #10b981; margin-top: 0.25rem;">-</h4>
+                    </div>
+                    <div>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Readiness Score</p>
+                        <h4 id="res-score" style="font-size: 1.25rem; font-weight: 600; color: #3b82f6; margin-top: 0.25rem;">-</h4>
+                    </div>
+                    <div>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Skill Match</p>
+                        <h4 id="res-skill-match" style="font-size: 1.25rem; font-weight: 600; color: #8b5cf6; margin-top: 0.25rem;">-</h4>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">Recommended Skills to Acquire:</p>
+                    <div id="res-missing" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="insights-container" style="background: rgba(15, 23, 42, 0.4); border-radius: 16px; padding: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 3rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: var(--text-muted);">🏫 Institutional Curriculum Insights</h3>
+                <button onclick="fetchCurriculumInsights()" style="padding: 0.5rem 1rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; cursor: pointer; transition: all 0.2s;">Generate Report</button>
+            </div>
+            
+            <div id="admin-insights-results" style="display: none;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Avg Batch Readiness</p>
+                        <h4 id="ci-avg-readiness" style="font-size: 1.5rem; font-weight: 700; color: #f59e0b; margin-top: 0.25rem;">-</h4>
+                    </div>
+                    <div style="padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Students at High Risk</p>
+                        <h4 id="ci-risk" style="font-size: 1.5rem; font-weight: 700; color: #ef4444; margin-top: 0.25rem;">-</h4>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 300px;">
+                        <h4 style="color: white; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Top Batch Skill Gaps</h4>
+                        <ul id="ci-gaps" style="color: var(--text-muted); line-height: 1.8; padding-left: 1.2rem; font-size: 0.9rem;"></ul>
+                    </div>
+                    <div style="flex: 1; min-width: 300px;">
+                        <h4 style="color: white; margin-bottom: 1rem; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Actionable Recommendations</h4>
+                        <ul id="ci-actions" style="color: #10b981; line-height: 1.8; padding-left: 1.2rem; font-size: 0.9rem;"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3 style="margin-bottom: 1rem; color: var(--text-muted);">Skill Gap Analysis</h3>
+                <canvas id="skillChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3 style="margin-bottom: 1rem; color: var(--text-muted);">Placement Trends</h3>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3 style="margin-bottom: 1rem; color: var(--text-muted);">Student Leaderboard & AI Insights</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                        <th>AI Suggestion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.course }}</td>
+                        <td><strong>{{ student.readiness_score }}</strong></td>
+                        <td>
+                            <span class="badge badge-{{ student.status }}">
+                                {% if student.readiness_score >= 80 %}Ready{% elif student.readiness_score >= 60 %}Needs Prep{% else %}At Risk{% endif %}
+                            </span>
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 0.875rem;">
+                            ✨ {{ student.suggestion }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script id="analytics-data" type="application/json">
+        {{ analytics | tojson | safe }}
+    </script>
+    <script>
+        // Parse the analytics data safely
+        const analyticsData = JSON.parse(document.getElementById('analytics-data').textContent);
+
+        // Chart.js Configuration
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+        // Skill Gap Chart
+        const skillCtx = document.getElementById('skillChart').getContext('2d');
+        const skillData = analyticsData.skill_gaps;
+        new Chart(skillCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(skillData),
+                datasets: [{
+                    label: 'Students Lacking Skill',
+                    data: Object.values(skillData),
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        // Trends Chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        const trendData = analyticsData.trends;
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                datasets: [{
+                    label: 'Placement Rate %',
+                    data: trendData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        // AI Profile Analyzer Function
+        async function analyzeProfile() {
+            const skillsInput = document.getElementById('ai-skills').value;
+            const gpa = parseFloat(document.getElementById('ai-gpa').value) || 0;
+            const projects = parseInt(document.getElementById('ai-projects').value) || 0;
+            
+            const skills = skillsInput.split(',').map(s => s.trim()).filter(s => s);
+            
+            const btn = document.querySelector('button[onclick="analyzeProfile()"]');
+            btn.innerHTML = "Analyzing... ⏳";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/analyze-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ skills, gpa, projects })
+                });
+                const data = await response.json();
+                
+                document.getElementById('ai-results').style.display = 'block';
+                document.getElementById('res-job').innerText = data.job_match;
+                document.getElementById('res-score').innerText = data.readiness_score + '/100';
+                document.getElementById('res-skill-match').innerText = data.skill_match_percent + '%';
+                
+                const missingContainer = document.getElementById('res-missing');
+                missingContainer.innerHTML = '';
+                if (data.missing_skills.length === 0) {
+                    missingContainer.innerHTML = '<span style="color: #10b981; font-size: 0.875rem;">You are perfectly aligned with target roles!</span>';
+                } else {
+                    data.missing_skills.forEach(skill => {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge badge-danger';
+                        badge.innerText = skill;
+                        missingContainer.appendChild(badge);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Failed to analyze profile.");
+            } finally {
+                btn.innerHTML = "Analyze Profile ✨";
+                btn.disabled = false;
+            }
+        }
+
+        // Institutional Insights Function
+        async function fetchCurriculumInsights() {
+            const btn = document.querySelector('button[onclick="fetchCurriculumInsights()"]');
+            btn.innerHTML = "Generating... ⏳";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/curriculum-insights');
+                const data = await response.json();
+                
+                document.getElementById('admin-insights-results').style.display = 'block';
+                document.getElementById('ci-avg-readiness').innerText = data.average_readiness + '%';
+                document.getElementById('ci-risk').innerText = data.students_at_risk;
+                
+                const gapsContainer = document.getElementById('ci-gaps');
+                gapsContainer.innerHTML = '';
+                data.top_skill_gaps.forEach(gap => {
+                    gapsContainer.innerHTML += `<li><strong style="color: white;">${gap.skill}</strong> - Lacking in <span style="color: #ef4444;">${gap.percentage_lacking}%</span> of batch</li>`;
+                });
+
+                const actionsContainer = document.getElementById('ci-actions');
+                actionsContainer.innerHTML = '';
+                data.actionable_recommendations.forEach(action => {
+                    actionsContainer.innerHTML += `<li>${action}</li>`;
+                });
+            } catch (err) {
+                console.error(err);
+                alert("Failed to fetch curriculum insights.");
+            } finally {
+                btn.innerHTML = "Generate Report";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
